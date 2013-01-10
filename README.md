@@ -10,14 +10,14 @@ Like iptables-save, but sorted.
 ## About
 
 In the iptables firewall, rules are evaluated from first to last rule. On
-ACCEPT or DROP rules, if a rule is matched, it will not be evaluated to next
-rules. This means that the firewall will have to keep matching packets against
-the configured rules until it finds a hit. Processing these rules are mostly
-CPU-bound and therefor turn out to be a bottle neck.
+ACCEPT or DROP rules, if a rule is matched, it will stop evaluating rules.
+This means that the firewall will have to keep matching packets against the
+configured rules until it finds a hit. Processing these rules are mostly
+CPU bound and therefor can turn out to be a bottle neck on loaded systems.
 
-The iptables-sort script attempts to limit spending CPU cycles on rules that
-are inefficiently ordered by re-ordering the iptables rules based on packet
-counts. Rules that belong to the same chain and target will be grouped.
+iptables-sort attempts to limit spending CPU cycles on rules that are
+inefficiently ordered by organising the iptables rules based on packet counts.
+Rules that belong to the same chain and target will be grouped.
 
 ## Usage
 
