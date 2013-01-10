@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import datetime
-import re
+import fnmatch
 import subprocess
 import sys
 
@@ -41,8 +41,7 @@ class IPTablesFragment(object):
         raise NotImplementedError
 
     def parse_counters(self, counters):
-        self.packets, self.bytes = map(long,
-            counters.strip('[]').split(':'))
+        self.packets, self.bytes = map(long, counters.strip('[]').split(':'))
 
 
 class IPTablesTable(IPTablesFragment):
@@ -55,7 +54,8 @@ class IPTablesTable(IPTablesFragment):
 
 class IPTablesPolicy(IPTablesFragment):
     def __str__(self):
-        return ':%s %s [%d:%d]' % (self.chain, self.target,
+        return ':%s %s [%d:%d]' % (
+            self.chain, self.target,
             self.packets, self.bytes)
 
     def parse(self, line):
@@ -63,7 +63,7 @@ class IPTablesPolicy(IPTablesFragment):
         self.chain = part.pop(0)
         self.target = part.pop(0)
         self.parse_counters(part.pop(0))
-        
+
 
 class IPTablesRule(IPTablesFragment):
     def __str__(self):
@@ -79,8 +79,8 @@ class IPTablesRule(IPTablesFragment):
                 option, value = option.split(' ', 1)
                 if option not in IPTABLES_OPTIONS:
                     continue
-                
-                setattr(self, IPTABLES_OPTIONS[option], value)
+                else:
+                    setattr(self, IPTABLES_OPTIONS[option], value)
 
 
 class RuleGroup(object):
@@ -128,9 +128,7 @@ class IPTablesSort(object):
     footer = '# Completed on %s' % (format,)
 
     def __init__(self, options):
-        last = None
         rules = self.load()
-        chain = {}
         group = {}
         output = []
 
@@ -143,7 +141,7 @@ class IPTablesSort(object):
                 output.append(item)
 
             elif isinstance(item, IPTablesRule):
-                if item.chain in options.ignore_chain:
+                if self._match(item.chain, options.ignore_chain):
                     output.append(item)
                     continue
 
@@ -162,9 +160,10 @@ class IPTablesSort(object):
         print '\n'.join(map(str, output))
         print 'COMMIT'
         print datetime.datetime.now().strftime(self.footer)
-        
+
     def load(self):
-        pipe = subprocess.Popen([
+        pipe = subprocess.Popen(
+            [
                 IPTABLES_SAVE,
                 '--counters',
             ],
@@ -185,13 +184,22 @@ class IPTablesSort(object):
             elif line[0] == '[':
                 yield IPTablesRule(line[1:])
 
+    def _match(self, name, patterns):
+        for pattern in patterns:
+            if fnmatch.fnmatchcase(name, pattern):
+                return True
+        return False
+
+
 def run():
     import optparse
 
     parser = optparse.OptionParser()
-    parser.add_option('-c', '--ignore-chain', action='append', metavar='NAME',
+    parser.add_option(
+        '-c', '--ignore-chain', action='append', metavar='NAME',
         help='Skip re-ordering rules in chain')
-    parser.add_option('-B', '--sort-bytes', action='store_true', default=False,
+    parser.add_option(
+        '-B', '--sort-bytes', action='store_true', default=False,
         help='Sort by bytes rather than packet counts (default: no)')
 
     options, args = parser.parse_args()
