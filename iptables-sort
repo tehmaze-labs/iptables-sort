@@ -38,7 +38,7 @@ class IPTablesFragment(object):
         return '<%s>' % (' '.join(bits),)
 
     def parse(self, line):
-        raise NotImplementedError
+        self.line = line
 
     def parse_counters(self, counters):
         self.packets, self.bytes = map(long, counters.strip('[]').split(':'))
@@ -54,11 +54,10 @@ class IPTablesTable(IPTablesFragment):
 
 class IPTablesPolicy(IPTablesFragment):
     def __str__(self):
-        return ':%s %s [%d:%d]' % (
-            self.chain, self.target,
-            self.packets, self.bytes)
+        return ':%s' % (self.line,)
 
     def parse(self, line):
+        super(IPTablesPolicy, self).parse(line)
         part = line.split()
         self.chain = part.pop(0)
         self.target = part.pop(0)
@@ -67,9 +66,10 @@ class IPTablesPolicy(IPTablesFragment):
 
 class IPTablesRule(IPTablesFragment):
     def __str__(self):
-        return '[%d:%d] %s' % (self.packets, self.bytes, self.rule)
+        return self.line
 
     def parse(self, line):
+        super(IPTablesRule, self).parse(line)
         part = line.split(' ', 1)
         self.parse_counters(part.pop(0))
         self.rule = part.pop(0)
@@ -182,7 +182,7 @@ class IPTablesSort(object):
             elif line[0] == ':':
                 yield IPTablesPolicy(line[1:])
             elif line[0] == '[':
-                yield IPTablesRule(line[1:])
+                yield IPTablesRule(line)
 
     def _match(self, name, patterns):
         for pattern in patterns:
