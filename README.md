@@ -33,8 +33,10 @@ For all available options, refer to the inline help:
 
     Options:
       -h, --help            show this help message and exit
-      -c NAME, --ignore-chain=NAME
+      -c GLOB, --ignore-chain=GLOB
                             Skip re-ordering rules in chain
+      -t GLOB, --ignore-target=GLOB
+                            Skip re ordering rules in target
       -B, --sort-bytes      Sort by bytes rather than packet counts (default: no)
 
 
