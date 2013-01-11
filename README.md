@@ -44,8 +44,10 @@ So, to prevent rules from being re-ordered in the default chains:
 
     # iptables-sort \
         -c INPUT,OUTPUT,FORWARD \
-        -c PREROUTING,POSTROUTING \
+        -c \*ROUTING \
         | iptables-restore
+
+The `*ROUTING` glob will match both `PREROUSTING` and `POSTROUTING` chains.
 
 ## Bugs
 
