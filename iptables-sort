@@ -144,6 +144,9 @@ class IPTablesSort(object):
                 if self._match(item.chain, options.ignore_chain):
                     output.append(item)
                     continue
+                if self._match(item.target, options.ignore_target):
+                    output.append(item)
+                    continue
 
                 block = (item.chain, item.target)
                 if block not in group:
@@ -196,20 +199,24 @@ def run():
 
     parser = optparse.OptionParser()
     parser.add_option(
-        '-c', '--ignore-chain', action='append', metavar='NAME',
+        '-c', '--ignore-chain', action='append', metavar='GLOB',
         help='Skip re-ordering rules in chain')
+    parser.add_option(
+        '-t', '--ignore-target', action='append', metavar='GLOB',
+        help='Skip re ordering rules in target')
     parser.add_option(
         '-B', '--sort-bytes', action='store_true', default=False,
         help='Sort by bytes rather than packet counts (default: no)')
 
     options, args = parser.parse_args()
-    if options.ignore_chain:
-        skip = []
-        for chain in options.ignore_chain:
-            skip.extend(chain.split(','))
-        options.ignore_chain = skip
-    else:
-        options.ignore_chain = []
+    for attr in ('ignore_chain', 'ignore_target'):
+        if getattr(options, attr):
+            skip = []
+            for item in getattr(options, attr):
+                skip.extend(item.split(','))
+            setattr(options, attr, skip)
+        else:
+            setattr(options, attr, [])
 
     IPTablesSort(options)
 
